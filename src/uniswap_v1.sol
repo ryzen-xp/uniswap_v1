@@ -36,7 +36,7 @@ contract ExchangeV1 is ERC20 {
     //////////////////////// EVENTS ///////////////////////
     event AddLiquidity(address indexed provider, uint256 ethAmount, uint256 tokenAmount);
     event RemovedLiquidity(address indexed recipient, uint256 eth_amount, uint256 token_amount);
-    event ETHToToken(address indexed recipient , uint256 ethAmount ,uint256 tokenAmount ,uint256 timestamp );
+    event ETHToToken(address indexed recipient, uint256 ethAmount, uint256 tokenAmount, uint256 timestamp);
 
     constructor(address _tokenAddress) ERC20("LP TOKEN", "XP") {
         if (_tokenAddress == address(0)) revert InvalidTokenAddress();
@@ -147,57 +147,55 @@ contract ExchangeV1 is ERC20 {
     /////////////////////////////////////////////////////////////////////////////////////
 
     // ethToTOKENSwap(min_TOKENs, recipient address, deadline)
-    function ETHToTokenSwap(uint256 min_token, address recipient, uint256 deadline) payable external returns(uint256) {
-        if(min_token == 0 || recipient == address(0) || deadline < block.timestamp){
+    function ETHToTokenSwap(uint256 min_token, address recipient, uint256 deadline) external payable returns (uint256) {
+        if (min_token == 0 || recipient == address(0) || deadline < block.timestamp) {
             revert InvalidInput();
         }
-        if(msg.value == 0){
+        if (msg.value == 0) {
             revert InvalidEthAmount();
         }
-        uint256 eth_reserve = address(this).balance - msg.value ;
+        uint256 eth_reserve = address(this).balance - msg.value;
         uint256 token_reserve = getTokenReserve();
 
         uint256 tokenBought = getAmount(msg.value, eth_reserve, token_reserve);
 
-        if(tokenBought < min_token ){
+        if (tokenBought < min_token) {
             revert NotMatchYourRequirement();
         }
 
         TOKEN.transfer(msg.sender, tokenBought);
 
-        emit ETHToToken(msg.sender , msg.value , tokenBought , block.timestamp );
+        emit ETHToToken(msg.sender, msg.value, tokenBought, block.timestamp);
 
-        return tokenBought ;
-
-        
-
+        return tokenBought;
     }
 
     // TOKENToEthSwap(TOKEN_amount_in, min_eth_out, recipient, deadline)
-    function TokenToETHSwap(uint256 token_amount, uint256 min_eth_out, address recipient, uint256 deadline) external returns(uint256) {
-         if(token_amount == 0 || recipient == address(0) || deadline < block.timestamp){
+    function TokenToETHSwap(uint256 token_amount, uint256 min_eth_out, address recipient, uint256 deadline)
+        external
+        returns (uint256)
+    {
+        if (token_amount == 0 || recipient == address(0) || deadline < block.timestamp) {
             revert InvalidInput();
         }
 
         uint256 token_reserve = getTokenReserve();
-        uint256 eth_reserve = address(this).balance ;
+        uint256 eth_reserve = address(this).balance;
 
         uint256 eth_bought = getAmount(token_amount, token_reserve, eth_reserve);
 
-        if(eth_bought  < min_eth_out){
+        if (eth_bought < min_eth_out) {
             revert NotMatchYourRequirement();
         }
 
-        (bool status , ) = address(this).call{value : eth_bought}("");
+        (bool status,) = address(this).call{value: eth_bought}("");
 
-        if(!status){
+        if (!status) {
             revert FailedToTransferETH();
         }
 
-        emit ETHToToken(msg.sender , token_amount , eth_bought , block.timestamp );
-        return eth_bought ;
-
-
+        emit ETHToToken(msg.sender, token_amount, eth_bought, block.timestamp);
+        return eth_bought;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -241,42 +239,42 @@ contract ExchangeV1 is ERC20 {
         return TOKEN.balanceOf(address(this));
     }
 
-
-
     //  getPrice
 
-    function getAmount(uint256 input_amount , uint256 input_reserve ,uint256 output_reserve) pure private returns(uint256)  {
-        if(input_amount == 0 || input_reserve == 0 || output_reserve == 0){
+    function getAmount(uint256 input_amount, uint256 input_reserve, uint256 output_reserve)
+        private
+        pure
+        returns (uint256)
+    {
+        if (input_amount == 0 || input_reserve == 0 || output_reserve == 0) {
             revert InvalidInput();
         }
 
-        uint256 input_amount_withFee = input_amount * 997 ;
-        uint256 n = input_amount_withFee * output_reserve ;
-        uint256 d = (input_reserve * 1000) + input_amount_withFee ;
+        uint256 input_amount_withFee = input_amount * 997;
+        uint256 n = input_amount_withFee * output_reserve;
+        uint256 d = (input_reserve * 1000) + input_amount_withFee;
 
-        return n/d ;
-
+        return n / d;
     }
 
-    // get token amount  
+    // get token amount
 
-    function getTokenAmount(uint256 eth_amount) public view returns(uint256) {
-        if(eth_amount == 0 ){
-           revert InvalidInput();
+    function getTokenAmount(uint256 eth_amount) public view returns (uint256) {
+        if (eth_amount == 0) {
+            revert InvalidInput();
         }
 
         return getAmount(eth_amount, address(this).balance, getTokenReserve());
-
     }
 
     //  getETHAMoubt
 
-    function getETHAmount(uint256 token_amount) public view returns(uint256) {
-        if(token_amount == 0 ){
+    function getETHAmount(uint256 token_amount) public view returns (uint256) {
+        if (token_amount == 0) {
             revert InvalidInput();
         }
 
-        return  getAmount(token_amount, getTokenReserve(), address(this).balance);
+        return getAmount(token_amount, getTokenReserve(), address(this).balance);
     }
 }
 
