@@ -234,30 +234,12 @@ contract ExchangeV1 is ERC20 {
         return numerator / denominator;
     }
 
-    //  get reserves of exchange pair
+    //  function give how much token is locked in contract.
     function getTokenReserve() public view returns (uint256) {
         return TOKEN.balanceOf(address(this));
     }
 
-    //  getPrice
-
-    function getAmount(uint256 input_amount, uint256 input_reserve, uint256 output_reserve)
-        private
-        pure
-        returns (uint256)
-    {
-        if (input_amount == 0 || input_reserve == 0 || output_reserve == 0) {
-            revert InvalidInput();
-        }
-
-        uint256 input_amount_withFee = input_amount * 997;
-        uint256 n = input_amount_withFee * output_reserve;
-        uint256 d = (input_reserve * 1000) + input_amount_withFee;
-
-        return n / d;
-    }
-
-    // get token amount
+    // This function is used to  know how much  token i get in return if i give x amount of ETH.
 
     function getTokenAmount(uint256 eth_amount) public view returns (uint256) {
         if (eth_amount == 0) {
@@ -275,6 +257,22 @@ contract ExchangeV1 is ERC20 {
         }
 
         return getAmount(token_amount, getTokenReserve(), address(this).balance);
+    }
+
+    function getAmount(uint256 input_amount, uint256 input_reserve, uint256 output_reserve)
+        private
+        pure
+        returns (uint256)
+    {
+        if (input_amount == 0 || input_reserve == 0 || output_reserve == 0) {
+            revert InvalidInput();
+        }
+
+        uint256 input_amount_withFee = input_amount * 997;
+        uint256 n = input_amount_withFee * output_reserve;
+        uint256 d = (input_reserve * 1000) + input_amount_withFee;
+
+        return n / d;
     }
 }
 
